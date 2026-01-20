@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五子棋游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .current-player {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: #f0f0f0;
+            margin-bottom: 15px;
+        }
+
+        .current-player span {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .current-player.black span {
+            background: #000;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .current-player.white span {
+            background: #fff;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .board {
+            display: inline-block;
+            background: #DEB887;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .board canvas {
+            display: block;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .hint-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .hint-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .winner {
+            color: #4CAF50;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: #333;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .rules-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 350px;
+            flex-shrink: 0;
+        }
+
+        .rules-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .rules-panel h3 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 18px;
+        }
+
+        .rules-panel p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .rules-panel ul {
+            color: #666;
+            line-height: 1.8;
+            margin-left: 20px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .rules-panel li {
+            margin-bottom: 8px;
+        }
+
+        .rules-panel .highlight {
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>五子棋</h1>
+    <div class="main-content">
+        <div class="game-container">
+            <div class="status">
+                <div class="current-player black" id="currentPlayer">
+                    <span></span>黑方回合
+                </div>
+            </div>
+            <div class="board">
+                <canvas id="board" width="450" height="450"></canvas>
+            </div>
+            <div class="buttons">
+                <button class="hint-btn" id="hintBtn" onclick="showHint()" disabled>提示</button>
+                <button class="restart-btn" id="restartBtn" onclick="restartGame()" disabled>重新开始</button>
+            </div>
+        </div>
+
+        <div class="rules-panel">
+            <h2>📖 游戏规则</h2>
+
+            <h3>基本规则</h3>
+            <ul>
+                <li>双方轮流在棋盘上落子</li>
+                <li>黑方（玩家）先行，白方（AI）后行</li>
+                <li>棋子落在棋盘交叉点上</li>
+                <li>落子后不能移动或移除</li>
+            </ul>
+
+            <h3>胜利条件</h3>
+            <p>先在<span class="highlight">横、竖、斜</span>任意方向连成<span class="highlight">5</span>个同色棋子的一方获胜。</p>
+
+            <h3>游戏说明</h3>
+            <ul>
+                <li>点击棋盘空白处落子</li>
+                <li>AI会在您落子后自动思考</li>
+                <li>点击<span class="highlight">提示</span>按钮查看推荐落子位置</li>
+                <li>点击<span class="highlight">重新开始</span>按钮开始新游戏</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="winnerText">游戏结束</h2>
+            <p id="winnerMessage">黑方获胜！</p>
+            <button class="restart-btn" onclick="restartGame()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const currentPlayerEl = document.getElementById('currentPlayer');
+        const modal = document.getElementById('modal');
+        const winnerText = document.getElementById('winnerText');
+        const winnerMessage = document.getElementById('winnerMessage');
+        const hintBtn = document.getElementById('hintBtn');
+        const restartBtn = document.getElementById('restartBtn');
+
+        const BOARD_SIZE = 15;
+        const CELL_SIZE = 30;
+        const OFFSET = 15;
+
+        let board = [];
+        let currentPlayer = 1; // 1: 黑方(玩家), 2: 白方(AI)
+        let gameOver = false;
+        let aiThinking = false;
+        let hintMoves = [];
+        let hasPlayed = false;
+
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                board[i] = [];
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    board[i][j] = 0;
+                }
+            }
+        }
+
+        function drawBoard() {
+            ctx.fillStyle = '#DEB887';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(OFFSET + i * CELL_SIZE, OFFSET);
+                ctx.lineTo(OFFSET + i * CELL_SIZE, OFFSET + (BOARD_SIZE - 1) * CELL_SIZE);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(OFFSET, OFFSET + i * CELL_SIZE);
+                ctx.lineTo(OFFSET + (BOARD_SIZE - 1) * CELL_SIZE, OFFSET + i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#8B4513';
+            const starPoints = [3, 7, 11];
+            for (let i of starPoints) {
+                for (let j of starPoints) {
+                    ctx.beginPath();
+                    ctx.arc(OFFSET + i * CELL_SIZE, OFFSET + j * CELL_SIZE, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] !== 0) {
+                        drawPiece(i, j, board[i][j]);
+                    }
+                }
+            }
+
+            if (hintMoves.length > 0) {
+                for (let move of hintMoves) {
+                    drawHintMarker(move.x, move.y);
+                }
+            }
+        }
+
+        function drawPiece(x, y, player) {
+            const centerX = OFFSET + x * CELL_SIZE;
+            const centerY = OFFSET + y * CELL_SIZE;
+            const radius = CELL_SIZE / 2 - 2;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+
+            if (player === 1) {
+                const gradient = ctx.createRadialGradient(centerX - 3, centerY - 3, 0, centerX, centerY, radius);
+                gradient.addColorStop(0, '#555');
+                gradient.addColorStop(1, '#000');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+            } else {
+                const gradient = ctx.createRadialGradient(centerX - 3, centerY - 3, 0, centerX, centerY, radius);
+                gradient.addColorStop(0, '#fff');
+                gradient.addColorStop(1, '#ddd');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+            }
+
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+        }
+
+        function drawHintMarker(x, y) {
+            const centerX = OFFSET + x * CELL_SIZE;
+            const centerY = OFFSET + y * CELL_SIZE;
+            const radius = CELL_SIZE / 2 - 4;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 4, 0, Math.PI * 2);
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function getGridPos(pos) {
+            const x = Math.round((pos.x - OFFSET) / CELL_SIZE);
+            const y = Math.round((pos.y - OFFSET) / CELL_SIZE);
+            return { x, y };
+        }
+
+        function handleClick(e) {
+            if (gameOver || aiThinking) return;
+
+            const pos = getMousePos(e);
+            const gridPos = getGridPos(pos);
+
+            if (gridPos.x >= 0 && gridPos.x < BOARD_SIZE &&
+                gridPos.y >= 0 && gridPos.y < BOARD_SIZE) {
+                if (board[gridPos.x][gridPos.y] === 0) {
+                    hintMoves = [];
+                    hasPlayed = true;
+                    hintBtn.disabled = false;
+                    restartBtn.disabled = false;
+                    board[gridPos.x][gridPos.y] = currentPlayer;
+                    drawBoard();
+
+                    if (checkWin(gridPos.x, gridPos.y, currentPlayer)) {
+                        gameOver = true;
+                        showWinner(currentPlayer);
+                        return;
+                    }
+
+                    if (checkDraw()) {
+                        gameOver = true;
+                        showDraw();
+                        return;
+                    }
+
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updateCurrentPlayer();
+
+                    if (currentPlayer === 2 && !gameOver) {
+                        aiThinking = true;
+                        setTimeout(() => {
+                            aiMove();
+                            aiThinking = false;
+                        }, 500);
+                    }
+                }
+            }
+        }
+
+        function checkWin(x, y, player) {
+            const directions = [
+                [1, 0],   // 水平
+                [0, 1],   // 垂直
+                [1, 1],   // 对角线
+                [1, -1]   // 反对角线
+            ];
+
+            for (let [dx, dy] of directions) {
+                let count = 1;
+
+                for (let i = 1; i < 5; i++) {
+                    const nx = x + dx * i;
+                    const ny = y + dy * i;
+                    if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && 
+                        board[nx][ny] === player) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+
+                for (let i = 1; i < 5; i++) {
+                    const nx = x - dx * i;
+                    const ny = y - dy * i;
+                    if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && 
+                        board[nx][ny] === player) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (count >= 5) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function checkDraw() {
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] === 0) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function updateCurrentPlayer() {
+            if (currentPlayer === 1) {
+                currentPlayerEl.className = 'current-player black';
+                currentPlayerEl.innerHTML = '<span></span>黑方回合';
+            } else {
+                currentPlayerEl.className = 'current-player white';
+                currentPlayerEl.innerHTML = '<span></span>白方回合';
+            }
+        }
+
+        function aiMove() {
+            let bestScore = -Infinity;
+            let bestMove = null;
+
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] === 0) {
+                        const attackScore = evaluatePosition(i, j, 2);
+                        const defendScore = evaluatePosition(i, j, 1);
+                        const score = attackScore + defendScore * 0.9;
+
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = { x: i, y: j };
+                        }
+                    }
+                }
+            }
+
+            if (!bestMove) {
+                const emptyCells = [];
+                for (let i = 0; i < BOARD_SIZE; i++) {
+                    for (let j = 0; j < BOARD_SIZE; j++) {
+                        if (board[i][j] === 0) {
+                            emptyCells.push({ x: i, y: j });
+                        }
+                    }
+                }
+                bestMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+
+            if (bestMove) {
+                board[bestMove.x][bestMove.y] = 2;
+                drawBoard();
+
+                if (checkWin(bestMove.x, bestMove.y, 2)) {
+                    gameOver = true;
+                    showWinner(2);
+                    return;
+                }
+
+                if (checkDraw()) {
+                    gameOver = true;
+                    showDraw();
+                    return;
+                }
+
+                currentPlayer = 1;
+                updateCurrentPlayer();
+            }
+        }
+
+        function evaluatePosition(x, y, player) {
+            let totalScore = 0;
+            const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+
+            for (let [dx, dy] of directions) {
+                let count = 1;
+                let openEnds = 0;
+                let blocked = 0;
+
+                for (let i = 1; i < 5; i++) {
+                    const nx = x + dx * i;
+                    const ny = y + dy * i;
+                    if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+                        if (board[nx][ny] === player) {
+                            count++;
+                        } else if (board[nx][ny] === 0) {
+                            openEnds++;
+                            break;
+                        } else {
+                            blocked++;
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                for (let i = 1; i < 5; i++) {
+                    const nx = x - dx * i;
+                    const ny = y - dy * i;
+                    if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+                        if (board[nx][ny] === player) {
+                            count++;
+                        } else if (board[nx][ny] === 0) {
+                            openEnds++;
+                            break;
+                        } else {
+                            blocked++;
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                if (count >= 5) {
+                    totalScore += 100000;
+                } else if (count === 4) {
+                    if (openEnds === 2) {
+                        totalScore += 10000;
+                    } else if (openEnds === 1) {
+                        totalScore += 1000;
+                    }
+                } else if (count === 3) {
+                    if (openEnds === 2) {
+                        totalScore += 1000;
+                    } else if (openEnds === 1) {
+                        totalScore += 100;
+                    }
+                } else if (count === 2) {
+                    if (openEnds === 2) {
+                        totalScore += 100;
+                    } else if (openEnds === 1) {
+                        totalScore += 10;
+                    }
+                }
+            }
+
+            return totalScore;
+        }
+
+        function showWinner(player) {
+            const winner = player === 1 ? '黑方' : '白方';
+            winnerText.textContent = '🎉 恭喜！';
+            winnerMessage.textContent = `${winner}获胜！`;
+            modal.classList.add('show');
+        }
+
+        function showDraw() {
+            winnerText.textContent = '游戏结束';
+            winnerMessage.textContent = '平局！';
+            modal.classList.add('show');
+        }
+
+        function showHint() {
+            if (gameOver || aiThinking || currentPlayer !== 1) return;
+
+            hintMoves = [];
+            let bestScore = -Infinity;
+
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] === 0) {
+                        const attackScore = evaluatePosition(i, j, 1);
+                        const defendScore = evaluatePosition(i, j, 2);
+                        const score = attackScore + defendScore * 0.9;
+
+                        if (score > bestScore) {
+                            bestScore = score;
+                            hintMoves = [{ x: i, y: j }];
+                        } else if (score === bestScore && score > 0) {
+                            hintMoves.push({ x: i, y: j });
+                        }
+                    }
+                }
+            }
+
+            drawBoard();
+        }
+
+        function restartGame() {
+            initBoard();
+            currentPlayer = 1;
+            gameOver = false;
+            aiThinking = false;
+            hintMoves = [];
+            hasPlayed = false;
+            hintBtn.disabled = true;
+            restartBtn.disabled = true;
+            updateCurrentPlayer();
+            drawBoard();
+            modal.classList.remove('show');
+        }
+
+        canvas.addEventListener('click', handleClick);
+
+        initBoard();
+        drawBoard();
+    </script>
+</body>
+</html>
